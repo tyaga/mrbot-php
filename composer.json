@@ -1,0 +1,33 @@
+{
+  "name": "tyaga/bot-php",
+  "description": "ICQ Bot API for PHP",
+  "type": "library",
+  "authors": [
+    {
+      "name": "tyaga",
+      "email": "tyagunov@corp.mail.ru"
+    }
+  ],
+  "config": {
+    "platform": {
+      "php": "7.3"
+    }
+  },
+  "require": {
+    "ext-json": "*",
+    "guzzlehttp/guzzle": "^7.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "MailIM\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "MailIM\\Test\\": "tests/"
+    }
+  }
+}
