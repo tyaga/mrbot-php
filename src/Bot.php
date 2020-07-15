@@ -12,72 +12,80 @@ class Bot {
 	public const LIBRARY_VERSION = "1.0.0";
 	
 	private $token;
-	private $api_url_base;
+	private $apiUrlBase;
 	private $name;
 	private $version;
 	private $timeout;
-	private $last_event_id;
+	private $lastEventId;
 	private $uin;
 	
 	/**
 	 * Bot constructor.
 	 * @param string $token
-	 * @param string $api_url_base
+	 * @param string $apiUrlBase
 	 * @param string $name
 	 * @param string $version
 	 * @param int $timeout
 	 */
-	public function __construct(string $token, string $api_url_base = "https://agent.mail.ru/bot/v1/", string $name = '-', string $version = '-', int $timeout = 20) {
-		$this->token        = $token;
-		$this->api_url_base = $api_url_base;
-		$this->name         = $name;
-		$this->version      = $version;
-		$this->timeout      = $timeout;
+	public function __construct(string $token, string $apiUrlBase = "https://agent.mail.ru/bot/v1/", string $name = '-', string $version = '-', int $timeout = 20) {
+		$this->token      = $token;
+		$this->apiUrlBase = $apiUrlBase;
+		$this->name       = $name;
+		$this->version    = $version;
+		$this->timeout    = $timeout;
 		
-		$this->last_event_id = 0;
+		$this->lastEventId = 0;
 		
 		$token_parts = explode(":", $token);
 		$this->uin   = $token_parts[count($token_parts) - 1];
 	}
 	
 	/**
-	 * @param string $method
 	 * @param string $uri
 	 * @param array $query
-	 * @param array|resource file
+	 * @param array $httpParams
 	 * @return array
 	 * @throws \GuzzleHttp\Exception\GuzzleException
 	 */
-	private function apiRequest(string $method, string $uri, array $query = [], $file = []): array {
+	private function apiRequest(string $uri, array $query = [], $httpParams = []): array {
 		$query["token"] = $this->token;
-
-		if (!$file) {
-			return $this->httpClient()->request($method, $uri, ['query' => $query])->getBody()->jsonSerialize();
-		}
 		
-		$options = [
-			'multipart' => [
-				[
-					'name'     => 'file',
-					'filename' => $file[0],
-					'contents' => $file[1],
-				]
-			]
-		];
-		foreach ($query as $key => $value) {
-			$options['multipart'][] = [
-				'name'     => $key,
-				'contents' => $value
-			];
-		}
-		
-		return $this->httpClient()->request('POST', $uri, $options)->getBody()->jsonSerialize();
+		return $this->httpClient($httpParams)->request('GET', $uri, ['query' => $query])->getBody()->jsonSerialize();
 	}
 	
 	/**
+	 * @param string $uri
+	 * @param array $query
+	 * @param array $httpParams
+	 * @return array
+	 * @throws \GuzzleHttp\Exception\GuzzleException
+	 */
+	private function apiRequestMultipart(string $uri, array $query = [], array $httpParams = []): array {
+		$query["token"] = $this->token;
+		
+		$options = [];
+		foreach ($query as $key => $value) {
+			$option = [
+				'name'     => $key,
+				'contents' => $value
+			];
+			if (strpos($key, 'file:') === 0) {
+				$file               = explode(':', $key);
+				$option['name']     = $file[0];
+				$option['filename'] = $file[1];
+			}
+			
+			$options['multipart'][] = $option;
+		}
+		
+		return $this->httpClient($httpParams)->request('POST', $uri, $options)->getBody()->jsonSerialize();
+	}
+	
+	/**
+	 * @param array $httpParams
 	 * @return \GuzzleHttp\Client
 	 */
-	private function httpClient(): \GuzzleHttp\Client {
+	private function httpClient(array $httpParams = []): \GuzzleHttp\Client {
 		$stack = HandlerStack::create();
 		
 		$stack->push(
@@ -93,8 +101,8 @@ class Bot {
 			[
 				'handler' => $stack,
 				
-				'base_uri' => $this->api_url_base,
-				'timeout'  => $this->timeout,
+				'base_uri' => $this->apiUrlBase,
+				'timeout'  => $httpParams['timeout'] ?? $this->timeout,
 				'headers'  => [
 					'User-Agent' => $this->userAgent(),
 				]
@@ -121,7 +129,7 @@ class Bot {
 	 * @throws \GuzzleHttp\Exception\GuzzleException
 	 */
 	public function selfGet(): array {
-		return $this->apiRequest('GET', 'self/get');
+		return $this->apiRequest('self/get');
 	}
 	
 	/**
@@ -145,13 +153,26 @@ class Bot {
 				"text"   => $text,
 			]
 		);
-		return $this->apiRequest('GET', 'messages/sendText', $query);
+		return $this->apiRequest('messages/sendText', $query);
+	}
+	
+	/**
+	 * @param array $query
+	 * @return bool
+	 */
+	private function checkFileInQuery(array $query): bool {
+		$found = false;
+		foreach ($query as $key => $value) {
+			if ((is_resource($value) || is_string($value)) && strpos($key, 'file:') === 0) {
+				$found = true;
+			}
+		}
+		return $found;
 	}
 	
 	/**
 	 * @param string $chatId
 	 * @param string $fileId
-	 * @param resource|array|string $file
 	 * @param array $query
 	 *  [
 	 *      "caption"
@@ -163,30 +184,39 @@ class Bot {
 	 * @return array
 	 * @throws \GuzzleHttp\Exception\GuzzleException
 	 */
-	public function sendFile(string $chatId, string $fileId = "", array $file = [], array $query = []): array {
-		$query = array_merge(
-			$query,
-			[
-				"chatId" => $chatId,
-			]
-		);
+	public function sendFile(string $chatId, string $fileId, array $query = []): array {
+		$query = array_merge($query, ["chatId" => $chatId, 'fileId' => $fileId]);
 		
-		if ($file) {
-			return $this->apiRequest('POST', 'messages/sendFile', $query, $file);
+		return $this->apiRequest('messages/sendFile', $query);
+	}
+	
+	/**
+	 * @param string $chatId
+	 * @param array $query
+	 *  [
+	 *      "caption"
+	 *      "file:..." => resource|string
+	 *      "replyMsgId"
+	 *      "forwardChatId"
+	 *      "forwardMsgId"
+	 *      "inlineKeyboardMarkup"
+	 *  ]
+	 * @return array
+	 * @throws \GuzzleHttp\Exception\GuzzleException
+	 */
+	public function sendFileUpload(string $chatId, array $query = []): array {
+		$query = array_merge($query, ["chatId" => $chatId]);
+		
+		if (!$this->checkFileInQuery($query)) {
+			throw new \RuntimeException("File param missing");
 		}
 		
-		if ($fileId) {
-			$query["fileId"] = $fileId;
-			return $this->apiRequest('GET', 'messages/sendFile', $query);
-		}
-		
-		throw new \RuntimeException('Either fileId or file are required');
+		return $this->apiRequestMultipart('messages/sendFile', $query);
 	}
 	
 	/**
 	 * @param string $chatId
 	 * @param string $fileId
-	 * @param resource|array|string $file
 	 * @param array $query
 	 *  [
 	 *      "replyMsgId"
@@ -197,24 +227,31 @@ class Bot {
 	 * @return array
 	 * @throws \GuzzleHttp\Exception\GuzzleException
 	 */
-	public function sendVoice(string $chatId, string $fileId = "", array $file = [], array $query = []): array {
-		$query = array_merge(
-			$query,
-			[
-				"chatId" => $chatId,
-			]
-		);
+	public function sendVoice(string $chatId, string $fileId, array $query = []): array {
+		$query = array_merge($query, ["chatId" => $chatId, 'fileId' => $fileId]);
 		
-		if ($file) {
-			return $this->apiRequest('POST', 'messages/sendVoice', $query, $file);
+		return $this->apiRequest('messages/sendVoice', $query);
+	}
+	
+	/**
+	 * @param string $chatId
+	 * @param array $query
+	 *  [
+	 *      "file:..." => resource|string
+	 *      "replyMsgId"
+	 *      "forwardChatId"
+	 *      "forwardMsgId"
+	 *      "inlineKeyboardMarkup"
+	 *  ]
+	 * @return array
+	 * @throws \GuzzleHttp\Exception\GuzzleException
+	 */
+	public function sendVoiceUpload(string $chatId, array $query = []): array {
+		$query = array_merge($query, ["chatId" => $chatId]);
+		if (!$this->checkFileInQuery($query)) {
+			throw new \RuntimeException("File param missing");
 		}
-		
-		if ($fileId) {
-			$query["fileId"] = $fileId;
-			return $this->apiRequest('GET', 'messages/sendVoice', $query);
-		}
-		
-		throw new \RuntimeException('Either fileId or file are required');
+		return $this->apiRequestMultipart('messages/sendVoice', $query);
 	}
 	
 	/**
@@ -238,7 +275,7 @@ class Bot {
 			]
 		);
 		
-		return $this->apiRequest('GET', 'messages/editText', $query);
+		return $this->apiRequest('messages/editText', $query);
 	}
 	
 	/**
@@ -259,7 +296,7 @@ class Bot {
 			'msgId'  => $msgId,
 		];
 		
-		return $this->apiRequest('GET', 'messages/deleteMessages', $query);
+		return $this->apiRequest('messages/deleteMessages', $query);
 	}
 	
 	/**
@@ -278,13 +315,12 @@ class Bot {
 			$query['text'] = $text;
 		}
 		if ($showAlert !== null) {
-			$query['showAlert'] = $showAlert;
+			$query['showAlert'] = $showAlert ? 'true' : 'false';
 		}
 		if ($url !== "") {
 			$query['url'] = $url;
 		}
-		
-		return $this->apiRequest('GET', 'messages/answerCallbackQuery', $query);
+		return $this->apiRequest('messages/answerCallbackQuery', $query);
 	}
 	
 	/**
@@ -299,7 +335,7 @@ class Bot {
 			'actions' => $actions,
 		];
 		
-		return $this->apiRequest('GET', 'chats/sendActions', $query);
+		return $this->apiRequest('chats/sendActions', $query);
 	}
 	
 	/**
@@ -312,7 +348,7 @@ class Bot {
 			"chatId" => $chatId,
 		];
 		
-		return $this->apiRequest('GET', 'chats/getInfo', $query);
+		return $this->apiRequest('chats/getInfo', $query);
 	}
 	
 	/**
@@ -325,7 +361,7 @@ class Bot {
 			"chatId" => $chatId,
 		];
 		
-		return $this->apiRequest('GET', 'chats/getAdmins', $query);
+		return $this->apiRequest('chats/getAdmins', $query);
 	}
 	
 	/**
@@ -338,7 +374,7 @@ class Bot {
 			"chatId" => $chatId,
 		];
 		
-		return $this->apiRequest('GET', 'chats/getBlockedUsers', $query);
+		return $this->apiRequest('chats/getBlockedUsers', $query);
 	}
 	
 	/**
@@ -351,7 +387,7 @@ class Bot {
 			"chatId" => $chatId,
 		];
 		
-		return $this->apiRequest('GET', 'chats/getPendingUsers', $query);
+		return $this->apiRequest('chats/getPendingUsers', $query);
 	}
 	
 	/**
@@ -361,16 +397,21 @@ class Bot {
 	 * @throws \GuzzleHttp\Exception\GuzzleException
 	 */
 	public function getMembers(string $chatId, $cursor = null): array {
-		// todo walk over cursor
-		$query = [
-			"chatId" => $chatId,
-		];
+		$result = [];
+		do {
+			$query = [
+				"chatId" => $chatId,
+			];
+			if ($cursor) {
+				$query['cursor'] = $cursor;
+			}
+			$res = $this->apiRequest('chats/getMembers', $query);
+			
+			$result[] = $res['members'];
+			$cursor   = $res["cursor"] ?? null;
+		} while ($cursor);
 		
-		if ($cursor) {
-			$query['cursor'] = $cursor;
-		}
-		
-		return $this->apiRequest('GET', 'chats/getMembers', $query);
+		return ['members' => array_merge(...$result), 'ok' => true];
 	}
 	
 	/**
@@ -390,7 +431,7 @@ class Bot {
 			$query['delLastMessages'] = $delLastMessages;
 		}
 		
-		return $this->apiRequest('GET', 'chats/blockUser', $query);
+		return $this->apiRequest('chats/blockUser', $query);
 	}
 	
 	/**
@@ -405,7 +446,7 @@ class Bot {
 			"userId" => $userId,
 		];
 		
-		return $this->apiRequest('GET', 'chats/unblockUser', $query);
+		return $this->apiRequest('chats/unblockUser', $query);
 	}
 	
 	/**
@@ -416,10 +457,10 @@ class Bot {
 	 * @return array
 	 * @throws \GuzzleHttp\Exception\GuzzleException
 	 */
-	public function resolvePending(string $chatId, bool $approve = true, string $userId = "", $everyone = null): array {
+	public function resolvePending(string $chatId, $approve = true, $everyone = null, string $userId = ""): array {
 		$query = [
 			"chatId"  => $chatId,
-			"approve" => $approve,
+			"approve" => $approve ? 'true' : 'false',
 		];
 		
 		if ($userId !== "" && $everyone !== null) {
@@ -429,9 +470,14 @@ class Bot {
 			$query['userId'] = $userId;
 		}
 		if ($everyone !== null) {
-			$query['everyone'] = $everyone;
+			$query['everyone'] = $everyone ? 'true' : 'false';
 		}
-		return $this->apiRequest('GET', 'chats/resolvePending', $query);
+		$res = $this->apiRequest('chats/resolvePending', $query);
+		
+		if (!$res['ok'] && $res['description'] === 'User is not pending or nobody in pending list') {
+			$res['ok'] = true;
+		}
+		return $res;
 	}
 	
 	/**
@@ -446,7 +492,7 @@ class Bot {
 			"title"  => $title,
 		];
 		
-		return $this->apiRequest('GET', 'chats/setTitle', $query);
+		return $this->apiRequest('chats/setTitle', $query);
 	}
 	
 	/**
@@ -461,7 +507,7 @@ class Bot {
 			"about"  => $about,
 		];
 		
-		return $this->apiRequest('GET', 'chats/setAbout', $query);
+		return $this->apiRequest('chats/setAbout', $query);
 	}
 	
 	/**
@@ -476,7 +522,7 @@ class Bot {
 			"rules"  => $rules,
 		];
 		
-		return $this->apiRequest('GET', 'chats/setRules', $query);
+		return $this->apiRequest('chats/setRules', $query);
 	}
 	
 	/**
@@ -491,7 +537,7 @@ class Bot {
 			"msgId"  => $msgId,
 		];
 		
-		return $this->apiRequest('GET', 'chats/pinMessage', $query);
+		return $this->apiRequest('chats/pinMessage', $query);
 	}
 	
 	/**
@@ -506,7 +552,7 @@ class Bot {
 			"msgId"  => $msgId,
 		];
 		
-		return $this->apiRequest('GET', 'chats/unpinMessage', $query);
+		return $this->apiRequest('chats/unpinMessage', $query);
 	}
 	
 	
@@ -520,20 +566,60 @@ class Bot {
 			"fileId" => $fileId,
 		];
 		
-		return $this->apiRequest('GET', 'files/getInfo', $query);
+		return $this->apiRequest('files/getInfo', $query);
 	}
 	
 	/**
-	 * @param string $lastEventId
+	 * @param int $lastEventId
 	 * @param int $pollTime
 	 * @return array
 	 * @throws \GuzzleHttp\Exception\GuzzleException
 	 */
-	public function eventsGet(string $lastEventId, int $pollTime): array {
+	public function eventsGet(int $lastEventId, int $pollTime): array {
 		$query = [
 			"lastEventId" => $lastEventId,
 			"pollTime"    => $pollTime,
 		];
-		return $this->apiRequest('GET', 'events/get', $query);
+		return $this->apiRequest('events/get', $query, ['timeout' => $pollTime]);
+	}
+	
+	/**
+	 * @param string $chatId
+	 * @param string $fromMsgId
+	 * @param string $count
+	 * @param string $patchVersion
+	 * @param null|string $toMsgId
+	 * @return array
+	 * @throws \GuzzleHttp\Exception\GuzzleException
+	 * @deprecated
+	 *
+	 */
+	public function getHistory($chatId, $fromMsgId, $count, $patchVersion = 'init', $toMsgId = null) {
+		if (strpos($this->apiUrlBase, "icq") === false) {
+			throw new \RuntimeException('Works only for ICQ');
+		}
+		$params = [
+			'sn'           => $chatId,
+			'fromMsgId'    => $fromMsgId,
+			'count'        => $count,
+			'patchVersion' => $patchVersion,
+		];
+		
+		if ($toMsgId !== null) {
+			$params['tillMsgId'] = $toMsgId;
+		}
+		
+		return $this->httpClient()->request(
+			'POST',
+			'https://botapi.icq.net/rapi',
+			[
+				'json' => [
+					'method' => 'getHistory',
+					'reqId'  => (string)uniqid('', true),
+					'aimsid' => $this->token,
+					'params' => $params,
+				]
+			]
+		)->getBody()->jsonSerialize();
 	}
 }

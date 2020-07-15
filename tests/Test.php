@@ -24,13 +24,13 @@ class Test extends TestCase {
 	}
 	
 	public function testSendFile() {
-		$res = $this->bot()->sendFile(self::CHAT_ID, "", ['t.txt', fopen(__DIR__ . "/t.txt", 'rb')]);
+		$res = $this->bot()->sendFileUpload(self::CHAT_ID, ['file:t.txt' => fopen(__DIR__ . "/t.txt", 'rb')]);
 		self::assertTrue($res["ok"], $res['description'] ?? '');
 		
-		$res = $this->bot()->sendFile(self::CHAT_ID, "", ["t.txt", file_get_contents(__DIR__ . '/t.txt')], ['caption' => 'загруженный']);
+		$res = $this->bot()->sendFileUpload(self::CHAT_ID, ["file:t.txt" => file_get_contents(__DIR__ . '/t.txt'), 'caption' => 'загруженный']);
 		self::assertTrue($res["ok"], $res['description'] ?? '');
 		
-		$res = $this->bot()->sendFile(self::CHAT_ID, $res['fileId'], [], ['caption' => 'файл']);
+		$res = $this->bot()->sendFile(self::CHAT_ID, $res['fileId'], ['caption' => 'файл']);
 		self::assertTrue($res["ok"], $res['description'] ?? '');
 	}
 	
@@ -49,9 +49,9 @@ class Test extends TestCase {
 		
 		$res = $this->bot()->getBlockedUsers(self::GROUP_ID);
 		self::assertTrue($res["ok"], $res['description'] ?? '');
-
-//		$res = $this->bot()->resolvePending(self::GROUP_ID, true, '', true);
-//		self::assertTrue($res["ok"], $res['description'] ?? '');
+		
+		$res = $this->bot()->resolvePending(self::GROUP_ID, true, true);
+		self::assertTrue($res["ok"], $res['description'] ?? '');
 		
 		$res = $this->bot()->setRules(self::GROUP_ID, "set rules");
 		self::assertTrue($res["ok"], $res['description'] ?? '');
