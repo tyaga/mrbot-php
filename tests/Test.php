@@ -5,9 +5,9 @@ namespace MailIM\Test;
 use PHPUnit\Framework\TestCase;
 
 class Test extends TestCase {
-	private const TOKEN    = "001.0083881076.1776569829:754528935";
-	private const CHAT_ID  = "tyagunov@corp.mail.ru";
-	private const GROUP_ID = "AoLF07RVZ9zLWzIGf3E";
+	const TOKEN    = "001.0083881076.1776569829:754528935";
+	const CHAT_ID  = "tyagunov@corp.mail.ru";
+	const GROUP_ID = "AoLF07RVZ9zLWzIGf3E";
 	
 	public function testSelfGet() {
 		$res = $this->bot()->selfGet();

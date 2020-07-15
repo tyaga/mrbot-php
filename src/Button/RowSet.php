@@ -24,7 +24,6 @@ class RowSet {
 	
 	/**
 	 * @return string
-	 * @throws \JsonException
 	 */
 	public function json(): string {
 		$result = [];
@@ -33,7 +32,7 @@ class RowSet {
 			$result[$row]   = $result[$row] ?? [];
 			$result[$row][] = $button->toArray();
 		}
-		return json_encode($result, JSON_THROW_ON_ERROR);
+		return json_encode($result);
 	}
 	
 	/**

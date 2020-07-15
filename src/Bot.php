@@ -10,7 +10,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 
 class Bot {
-	public const LIBRARY_VERSION = "1.0.0";
+	const LIBRARY_VERSION = "1.0.0";
 	
 	private $token;
 	private $apiUrlBase;
@@ -28,7 +28,7 @@ class Bot {
 	/**
 	 * @param LoggerInterface $logger
 	 */
-	public function setLogger(LoggerInterface $logger): void {
+	public function setLogger(LoggerInterface $logger) {
 		$this->logger = $logger;
 	}
 	
