@@ -12,6 +12,7 @@ use Psr\Log\LoggerInterface;
 class Bot {
 	const LIBRARY_VERSION = "1.0.0";
 	
+	
 	private $token;
 	private $apiUrlBase;
 	private $name;
