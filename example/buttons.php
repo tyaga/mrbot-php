@@ -1,77 +1,50 @@
 <?php
 
 declare(strict_types=1);
+
 require_once __DIR__ . "/../vendor/autoload.php";
+
+use MailIM\Bot;
+use MailIM\Button\Button;
+use MailIM\Button\RowSet;
+use MailIM\Button\Simple;
+use MailIM\Button\Style;
+use MailIM\Dispatcher;
 
 define('TOKEN', '001.0083881076.1776569829:754528935');
 define('CHAT_ID', "tyagunov@corp.mail.ru");
-define('GROUP_ID', "AoLF07RVZ9zLWzIGf3E");
 
-$bot = new \MailIM\Bot(TOKEN);
+$bot = new Bot(TOKEN);
+$bot->setLogger(
+	new class extends \Psr\Log\AbstractLogger {
+		public function log($level, $message, array $context = []) { error_log($message . ' ' . var_export($context, true)); }
+	}
+);
 
-$button1 = new \MailIM\Button("a", "cbdata1", "attention");
+$button1 = new Button("a", Style::ATTENTION);
 $button1->setCallback(
-	function(\MailIM\Bot $bot, string $queryId) {
+	static function(Bot $bot, string $queryId) {
 		$bot->answerCallbackQuery($queryId, 'ответ button "a"', false, 'http://mail.ru');
 	}
 );
 
-$button2 = new \MailIM\Button("b", "cbdata2", "primary");
+$button2 = new Button("b", Style::DEFAULT);
 $button2->setCallback(
-	function(\MailIM\Bot $bot, string $queryId) {
-		$bot->answerCallbackQuery($queryId, 'ответ button "b"', false, 'http://ya.ru');
+	static function(Bot $bot, string $queryId) {
+		$bot->answerCallbackQuery($queryId, 'ответ button "b"');
 	}
 );
 
-$buttonSet = new \MailIM\ButtonSet();
-$buttonSet->add($button1)->add($button2, 1);
+$buttonSet = new RowSet();
+$buttonSet
+	->add($button1)
+	->add($button2, 1)
+	->add(new Simple("c", Style::PRIMARY, 'ответ button "c"', false, "http://yandex.ru"), 2)
+	->add(new Simple("d", Style::ATTENTION, 'ответ button "c"'), 2);
 
 $res = $bot->sendText(CHAT_ID, "test", ['inlineKeyboardMarkup' => $buttonSet->json()]);
 if (!$res['ok']) {
 	throw new Exception($res['description']);
 }
 
-$dispatcher = new \MailIM\Dispatcher($bot);
-foreach ($buttonSet->getCallbackHash() as $callbackData => $callback) {
-	$dispatcher->addHander(
-		'callbackQuery',
-		function(\MailIM\Bot $bot, $payload) use ($callbackData, $callback) {
-			if ($payload['callbackData'] === $callbackData) {
-				$callback($bot, $payload['queryId']);
-			}
-		}
-	);
-}
-$dispatcher->run();
-
-/*case 'standard':
-			$bot->answerCallbackQuery($payload['queryId'], 'standard', false, 'http://mail.ru');
-			break;
-		case 'standard_alert':
-			$bot->answerCallbackQuery($payload['queryId'], 'standard_alert', true, 'http://mail.ru');
-			break;
-		case 'primary':
-			$bot->answerCallbackQuery($payload['queryId'], 'primary');
-			break;
-		case 'primary_alert':
-			$bot->answerCallbackQuery($payload['queryId'], 'primary_alert', true);
-			break;
-		case 'attention':
-			$bot->answerCallbackQuery($payload['queryId'], 'attention', false, 'http://mail.ru');
-			break;
-
-
-$buttons = json_encode(
-	[
-		[
-			['text' => 'c', 'callbackData' => 'primary', "style" => "primary"],
-			['text' => 'd', 'callbackData' => 'primary', "style" => "primary"],
-		],
-		[
-			['text' => 'e', 'callbackData' => 'attention', "style" => "attention"],
-		]
-	],
-	JSON_THROW_ON_ERROR
-);
-
-*/
+(new Dispatcher($bot, 30))->addButtonSetHandlers($buttonSet)->run();

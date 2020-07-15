@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace MailIM;
+namespace MailIM\Button;
 
-class ButtonSet {
+class RowSet {
 	/**
 	 * @var $buttons array[Button]
 	 */
@@ -13,9 +13,9 @@ class ButtonSet {
 	/**
 	 * @param Button $button
 	 * @param int $row
-	 * @return ButtonSet
+	 * @return RowSet
 	 */
-	public function add(Button $button, int $row = 0): ButtonSet {
+	public function add(Button $button, int $row = 0): RowSet {
 		$this->buttons[$row]   = $this->buttons[$row] ?? [];
 		$this->buttons[$row][] = $button;
 		
@@ -28,11 +28,10 @@ class ButtonSet {
 	 */
 	public function json(): string {
 		$result = [];
-		foreach ($this->buttons as $row => $buttons) {
-			$result[$row] = $result[$row] ?? [];
-			foreach ($buttons as $button) {
-				$result[$row][] = $button->toArray();
-			}
+		foreach ($this->rowsIterator() as $row => $button) {
+			/** @var $button Button */
+			$result[$row]   = $result[$row] ?? [];
+			$result[$row][] = $button->toArray();
 		}
 		return json_encode($result, JSON_THROW_ON_ERROR);
 	}
@@ -42,15 +41,21 @@ class ButtonSet {
 	 */
 	public function getCallbackHash(): array {
 		$result = [];
-		foreach ($this->buttons as $row => $buttons) {
-			foreach ($buttons as $button) {
-				/**
-				 * @var $button Button
-				 */
-				
-				$result[$button->getCallbackData()] = $button->getCallback();
-			}
+		foreach ($this->rowsIterator() as $row => $button) {
+			/** @var $button Button */
+			$result[$button->getCallbackData()] = $button->getCallback();
 		}
 		return $result;
+	}
+	
+	/**
+	 * @return \Generator
+	 */
+	public function rowsIterator(): \Generator {
+		foreach ($this->buttons as $row => $buttons) {
+			foreach ($buttons as $button) {
+				yield $row => $button;
+			}
+		}
 	}
 }

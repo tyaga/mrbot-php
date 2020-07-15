@@ -37,7 +37,7 @@ class Dispatcher {
 					$handlers = $this->getHandlers($event['type']);
 					
 					foreach ($handlers as $handler) {
-						$handler($this->bot, $event['payload']);
+						$handler($this->bot, $event['type'], $event['payload']);
 					}
 				}
 				
@@ -59,13 +59,29 @@ class Dispatcher {
 	/**
 	 * @param string $type
 	 * @param callable $callback
-	 * @return $this
+	 * @return Dispatcher
 	 */
-	public function addHander(string $type, callable $callback) {
+	public function addHander(string $type, callable $callback): Dispatcher {
 		$this->handlers[$type]   = $this->handlers[$type] ?? [];
 		$this->handlers[$type][] = $callback;
 		return $this;
 	}
 	
-	
+	/**
+	 * @param Button\RowSet $buttonSet
+	 * @return Dispatcher
+	 */
+	public function addButtonSetHandlers(Button\RowSet $buttonSet): Dispatcher {
+		foreach ($buttonSet->getCallbackHash() as $callbackData => $callback) {
+			$this->addHander(
+				'callbackQuery',
+				static function(Bot $bot, /** @noinspection PhpUnusedParameterInspection */ string $type, array $payload) use ($callbackData, $callback) {
+					if ($payload['callbackData'] === $callbackData) {
+						$callback($bot, $payload['queryId']);
+					}
+				}
+			);
+		}
+		return $this;
+	}
 }

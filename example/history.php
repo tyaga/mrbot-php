@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 require_once __DIR__ . "/../vendor/autoload.php";
 
 define('ICQ_TOKEN', "001.0083881076.1776569829:754528935");
@@ -11,6 +12,8 @@ define('MTM_GROUP_ID', "Aqk4Au51O7r6dTk"); // test
 
 $bot = new \MailIM\Bot(ICQ_TOKEN, 'https://api.icq.net/bot/v1/');
 $mtm = new \MailIM\Bot(MTM_TOKEN, 'https://api.internal.myteam.mail.ru/bot/v1/');
+
+//$bot->setLogger(new class extends \Psr\Log\AbstractLogger { public function log($level, $message, array $context = []) { error_log($message . ' ' . var_export($context, true));}});
 
 function history(\MailIM\Bot $bot, $chatId, $msgId = 0, $chunk = 1000) {
 	while (true) {

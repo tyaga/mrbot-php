@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MailIM;
+namespace MailIM\Button;
 
 class Button {
 	
@@ -14,13 +14,13 @@ class Button {
 	/**
 	 * Button constructor.
 	 * @param string $text
-	 * @param string $callbackData
 	 * @param string $style
 	 */
-	public function __construct(string $text, string $callbackData, string $style = '') {
-		$this->text         = $text;
-		$this->callbackData = $callbackData;
-		$this->style        = $style;
+	public function __construct(string $text, string $style = Style::DEFAULT) {
+		$this->text  = $text;
+		$this->style = $style;
+		
+		$this->callbackData = uniqid('', true);
 	}
 	
 	/**
@@ -39,9 +39,11 @@ class Button {
 	
 	/**
 	 * @param callable $callback
+	 * @return Button
 	 */
-	public function setCallback(callable $callback): void {
+	public function setCallback(callable $callback): Button {
 		$this->callback = $callback;
+		return $this;
 	}
 	
 	/**

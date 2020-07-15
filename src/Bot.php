@@ -7,6 +7,7 @@ namespace MailIM;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Log\LoggerInterface;
 
 class Bot {
 	public const LIBRARY_VERSION = "1.0.0";
@@ -18,6 +19,18 @@ class Bot {
 	private $timeout;
 	private $lastEventId;
 	private $uin;
+	
+	/**
+	 * @var LoggerInterface
+	 */
+	private $logger;
+	
+	/**
+	 * @param LoggerInterface $logger
+	 */
+	public function setLogger(LoggerInterface $logger): void {
+		$this->logger = $logger;
+	}
 	
 	/**
 	 * Bot constructor.
@@ -38,6 +51,8 @@ class Bot {
 		
 		$token_parts = explode(":", $token);
 		$this->uin   = $token_parts[count($token_parts) - 1];
+		
+		$this->logger = new \Psr\Log\NullLogger();
 	}
 	
 	/**
@@ -50,7 +65,11 @@ class Bot {
 	private function apiRequest(string $uri, array $query = [], $httpParams = []): array {
 		$query["token"] = $this->token;
 		
-		return $this->httpClient($httpParams)->request('GET', $uri, ['query' => $query])->getBody()->jsonSerialize();
+		$this->logger->debug("<<< req :" . $uri, $query);
+		$response = $this->httpClient($httpParams)->request('GET', $uri, ['query' => $query])->getBody()->jsonSerialize();
+		
+		$this->logger->debug(">>> resp:" . $uri, $response);
+		return $response;
 	}
 	
 	/**
