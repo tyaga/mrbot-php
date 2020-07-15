@@ -29,7 +29,9 @@ $dispatcher->addHander('deletedMessage', $callback);
 $dispatcher->addHander('pinnedMessage', $callback);
 $dispatcher->addHander('unpinnedMessage', $callback);
 $dispatcher->addHander('newChatMembers', $callback);
+
 $dispatcher->addHander('leftChatMembers', $callback);
+
 $dispatcher->addHander('pinnedMessage', $callback);
 
 $dispatcher->addHander(
