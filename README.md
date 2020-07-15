@@ -1,6 +1,6 @@
 # 🐘 mrbot-php
 
-[![Build Status](https://travis-ci.org/tyaga/mrbot-php.svg?branch=master)](https://travis-ci.org/tyaga/mrbot-php)
+[![Build Status](https://travis-ci.com/tyaga/mrbot-php.svg?branch=master)](https://travis-ci.com/tyaga/mrbot-php)
 
 ## Installing
 
