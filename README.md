@@ -1,6 +1,6 @@
 # 🐘 mrbot-php
 
-[![Travis-CI](https://img.shields.io/travis/tyaga/mrbot-php/master.svg)](https://travis-ci.org/tyaga/mrbot-php)
+[![Build Status](https://travis-ci.org/tyaga/mrbot-php.svg?branch=master)](https://travis-ci.org/tyaga/mrbot-php)
 
 ## Installing
 
