@@ -5,16 +5,16 @@ namespace MailIM\Test;
 use PHPUnit\Framework\TestCase;
 
 class Test extends TestCase {
-	const TOKEN    = "001.0083881076.1776569829:754528935";
-	const CHAT_ID  = "tyagunov@corp.mail.ru";
-	const GROUP_ID = "AoLF07RVZ9zLWzIGf3E";
+	public const TOKEN    = "001.0083881076.1776569829:754528935";
+	public const CHAT_ID  = "tyagunov@corp.mail.ru";
+	public const GROUP_ID = "AoLF07RVZ9zLWzIGf3E";
 	
 	public function testSelfGet() {
 		$res = $this->bot()->selfGet();
 		self::assertTrue($res["ok"]);
 	}
 	
-	protected function bot() {
+	protected function bot(): \MailIM\Bot {
 		return new \MailIM\Bot(self::TOKEN);
 	}
 	

@@ -1,6 +1,7 @@
 # 🐘 mrbot-php
 
 [![Build Status](https://travis-ci.com/tyaga/mrbot-php.svg?branch=master)](https://travis-ci.com/tyaga/mrbot-php)
+[![Coverage Status](https://coveralls.io/repos/github/tyaga/mrbot-php/badge.svg)](https://coveralls.io/github/tyaga/mrbot-php)
 
 ## Installing
 

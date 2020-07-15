@@ -14,7 +14,7 @@ $bot = new \MailIM\Bot(TOKEN, 'https://api.icq.net/bot/v1/');
 //$bot->setLogger(new \Monolog\Logger('botLogger', [new Monolog\Handler\ErrorLogHandler()]));
 $bot->setLogger(
 	new class extends \Psr\Log\AbstractLogger {
-		public function log($level, $message, array $context = []) { error_log($message . ' ' . var_export($context, true)); }
+		public function log($level, $message, array $context = []): void { error_log($message . ' ' . var_export($context, true)); }
 	}
 );
 

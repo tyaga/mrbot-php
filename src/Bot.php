@@ -10,15 +10,13 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 
 class Bot {
-	const LIBRARY_VERSION = "1.0.0";
-	
+	public const LIBRARY_VERSION = "1.0.0";
 	
 	private $token;
 	private $apiUrlBase;
 	private $name;
 	private $version;
 	private $timeout;
-	private $lastEventId;
 	private $uin;
 	
 	/**
@@ -29,7 +27,7 @@ class Bot {
 	/**
 	 * @param LoggerInterface $logger
 	 */
-	public function setLogger(LoggerInterface $logger) {
+	public function setLogger(LoggerInterface $logger): void {
 		$this->logger = $logger;
 	}
 	
@@ -47,8 +45,6 @@ class Bot {
 		$this->name       = $name;
 		$this->version    = $version;
 		$this->timeout    = $timeout;
-		
-		$this->lastEventId = 0;
 		
 		$token_parts = explode(":", $token);
 		$this->uin   = $token_parts[count($token_parts) - 1];
@@ -140,7 +136,7 @@ class Bot {
 	/**
 	 * @return string
 	 */
-	private function uin() {
+	private function uin(): string {
 		return $this->uin;
 	}
 	
@@ -614,7 +610,7 @@ class Bot {
 	 * @deprecated
 	 *
 	 */
-	public function getHistory($chatId, $fromMsgId, $count, $patchVersion = 'init', $toMsgId = null) {
+	public function getHistory($chatId, $fromMsgId, $count, $patchVersion = 'init', $toMsgId = null): array {
 		if (strpos($this->apiUrlBase, "icq") === false) {
 			throw new \RuntimeException('Works only for ICQ');
 		}

@@ -17,7 +17,7 @@ define('CHAT_ID', "tyagunov@corp.mail.ru");
 $bot = new Bot(TOKEN);
 $bot->setLogger(
 	new class extends \Psr\Log\AbstractLogger {
-		public function log($level, $message, array $context = []) { error_log($message . ' ' . var_export($context, true)); }
+		public function log($level, $message, array $context = []): void { error_log($message . ' ' . var_export($context, true)); }
 	}
 );
 
@@ -44,7 +44,7 @@ $buttonSet
 
 $res = $bot->sendText(CHAT_ID, "test", ['inlineKeyboardMarkup' => $buttonSet->json()]);
 if (!$res['ok']) {
-	throw new Exception($res['description']);
+	throw new \RuntimeException($res['description']);
 }
 
 (new Dispatcher($bot, 30))->addButtonSetHandlers($buttonSet)->run();

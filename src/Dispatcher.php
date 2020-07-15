@@ -24,7 +24,7 @@ class Dispatcher {
 	/**
 	 * @throws \GuzzleHttp\Exception\GuzzleException
 	 */
-	public function run() {
+	public function run(): void {
 		while (true) {
 			try {
 				$events = $this->bot->eventsGet($this->lastEventId, $this->pollInterval);
