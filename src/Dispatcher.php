@@ -5,6 +5,17 @@ declare(strict_types=1);
 namespace MailIM;
 
 class Dispatcher {
+	public const EVENT_NEW_MESSAGE    = "newMessage";
+	public const EVENT_CALLBACK_QUERY = "callbackQuery";
+	
+	public const EVENT_EDITED_MESSAGE   = "editedMessage";
+	public const EVENT_DELETED_MESSAGE  = "deletedMessage";
+	public const EVENT_PINNED_MESSAGE   = "pinnedMessage";
+	public const EVENT_UNPINNED_MESSAGE = "unpinnedMessage";
+	
+	public const EVENT_NEW_CHAT_MEMBERS  = "newChatMembers";
+	public const EVENT_LEFT_CHAT_MEMBERS = "leftChatMembers";
+	
 	private $bot;
 	private $pollInterval;
 	private $lastEventId = 0;
@@ -13,10 +24,10 @@ class Dispatcher {
 	
 	/**
 	 * Dispatcher constructor.
-	 * @param Bot $bot
+	 * @param Client $bot
 	 * @param int $pollInterval
 	 */
-	public function __construct(Bot $bot, int $pollInterval = 3) {
+	public function __construct(Client $bot, int $pollInterval = 3) {
 		$this->bot          = $bot;
 		$this->pollInterval = $pollInterval;
 	}
@@ -74,8 +85,8 @@ class Dispatcher {
 	public function addButtonSetHandlers(Button\RowSet $buttonSet): Dispatcher {
 		foreach ($buttonSet->getCallbackHash() as $callbackData => $callback) {
 			$this->addHander(
-				'callbackQuery',
-				static function(Bot $bot, /** @noinspection PhpUnusedParameterInspection */ string $type, array $payload) use ($callbackData, $callback) {
+				self::EVENT_CALLBACK_QUERY,
+				static function(Client $bot, /** @noinspection PhpUnusedParameterInspection */ string $type, array $payload) use ($callbackData, $callback) {
 					if ($payload['callbackData'] === $callbackData) {
 						$callback($bot, $payload['queryId']);
 					}

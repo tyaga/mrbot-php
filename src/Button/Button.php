@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace MailIM\Button;
 
 class Button {
+	public const DEFAULT   = "";
+	public const ATTENTION = "attention";
+	public const PRIMARY   = "primary";
 	
 	private $text;
 	private $callbackData;
@@ -16,7 +19,7 @@ class Button {
 	 * @param string $text
 	 * @param string $style
 	 */
-	public function __construct(string $text, string $style = Style::DEFAULT) {
+	public function __construct(string $text, string $style = self::DEFAULT) {
 		$this->text  = $text;
 		$this->style = $style;
 		

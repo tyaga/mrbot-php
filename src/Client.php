@@ -9,8 +9,8 @@ use GuzzleHttp\Middleware;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
 
-class Bot {
-	public const LIBRARY_VERSION = "1.0.0";
+class Client {
+	public const LIBRARY_VERSION = "2.0.0";
 	
 	private $token;
 	private $apiUrlBase;
@@ -25,6 +25,11 @@ class Bot {
 	private $logger;
 	
 	/**
+	 * @var \GuzzleHttp\ClientInterface
+	 */
+	private $client;
+	
+	/**
 	 * @param LoggerInterface $logger
 	 */
 	public function setLogger(LoggerInterface $logger): void {
@@ -32,7 +37,7 @@ class Bot {
 	}
 	
 	/**
-	 * Bot constructor.
+	 * Client constructor.
 	 * @param string $token
 	 * @param string $apiUrlBase
 	 * @param string $name
@@ -99,21 +104,23 @@ class Bot {
 	
 	/**
 	 * @param array $httpParams
-	 * @return \GuzzleHttp\Client
+	 * @return \GuzzleHttp\ClientInterface
 	 */
-	private function httpClient(array $httpParams = []): \GuzzleHttp\Client {
-		$stack = HandlerStack::create();
+	protected function httpClient(array $httpParams = []): \GuzzleHttp\ClientInterface {
+		if ($this->client) {
+			return $this->client;
+		}
 		
+		$stack = HandlerStack::create();
 		$stack->push(
 			Middleware::mapResponse(
 				static function(Response $response) {
-					$jsonStream = new JsonStream($response->getBody());
-					return $response->withBody($jsonStream);
+					return $response->withBody(new JsonStream($response->getBody()));
 				}
 			)
 		);
 		
-		return new \GuzzleHttp\Client(
+		$this->client = new \GuzzleHttp\Client(
 			[
 				'handler' => $stack,
 				
@@ -124,6 +131,7 @@ class Bot {
 				]
 			]
 		);
+		return $this->client;
 	}
 	
 	/**
