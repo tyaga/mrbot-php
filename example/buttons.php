@@ -11,8 +11,8 @@ use MailIM\Button\Simple;
 use MailIM\Button\Style;
 use MailIM\Dispatcher;
 
-define('TOKEN', '001.0083881076.1776569829:754528935');
-define('CHAT_ID', "tyagunov@corp.mail.ru");
+define('TOKEN', 'use your token');
+define('CHAT_ID', "use your chat id");
 
 $bot = new Bot(TOKEN);
 $bot->setLogger(
